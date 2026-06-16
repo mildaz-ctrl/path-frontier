@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>path frontier</title>
+
+<style>
+/* ========================================================
+   📱 画面全体のレイアウト（自動高さ同期用）
+   ======================================================== */
+body {
+    font-family: sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;
+    background: #f7f7f7;
+    padding-top: 210px; 
+    transition: padding-top 0.1s ease;
+}
+
+/* ========================================================
+   📌 固定ヘッダーエリア
+   ======================================================== */
+.sticky-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #f7f7f7;
+    z-index: 1000;
+    padding: 10px 14px 4px 14px;
+    max-width: 900px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+h1 { margin: 0; font-size: 16px; font-weight: bold; color: #333; }
+
+.header-actions { display: flex; align-items: center; gap: 8px; }
+
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    background: #eee;
+    padding: 3px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.toggle-wrapper input { margin: 0; }
+
+.sub-link-area a {
+    font-size: 11px;
+    color: #ff4757;
+    text-decoration: none;
+    font-weight: bold;
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: #fff;
+}
+
+/* ========================================================
+   🛠️ コントロールパネル
+   ======================================================== */
+.control-panel {
+    background: #fff;
+    padding: 6px 8px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.control-section {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px dashed #eee;
+}
+.control-section:last-child { border-bottom: none; }
+
+.control-title {
+    font-size: 11px;
+    color: #888;
+    font-weight: bold;
+    width: 42px; 
+    flex-shrink: 0;
+}
+
+.filters-row { display: flex; gap: 8px; flex-grow: 1; }
+.filters-row label {
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    color: #444;
+    white-space: nowrap;
+}
+
+.submit-section { padding-top: 4px; }
+.apply-btn {
+    width: 100%;
+    padding: 5px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* ========================================================
+   📊 プラットフォームタブ（件数バッジ維持）
+   ======================================================== */
+.platform-container {
+    background: #fff;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.platform-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+.platform-tab.active {
+    color: #007bff;
+    border-bottom: 3px solid #007bff;
+    background: #f8fafc;
+}
+
+.tab-count {
+    font-size: 10px;
+    background: #eee;
+    color: #666;
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-weight: normal;
+}
+.platform-tab.active .tab-count {
+    background: #007bff;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* ========================================================
+   📜 スクロールコンテンツエリア
+   ======================================================== */
+.scroll-content { padding: 10px 14px; }
+
+.news-accordion {
+    background: #fff;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+.news-header {
+    background: #fff3cd;
+    color: #856404;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.news-content {
+    display: none;
+    padding: 10px 12px;
+    background: #fff;
+    border-top: 1px solid #ffeeba;
+}
+.news-content ul { margin: 0; padding-left: 18px; }
+.news-content li { font-size: 12px; margin-bottom: 6px; line-height: 1.4; }
+
+/* 商品リスト */
+.results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.card {
+    background: #fff;
+    padding: 8px 12px; 
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.thumb {
+    width: 100%;
+    height: 140px;
+    background: #ddd;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: none; 
+}
+
+body.image-on .thumb { display: block !important; }
+
+.card h3 { margin: 0 0 6px 0; font-size: 14px; line-height: 1.4; }
+.card h3 a { color: #222; text-decoration: none; }
+
+.price-row { margin-top: auto; }
+.price { color: #d10000; font-weight: bold; font-size: 15px; }
+.sale { color: #008000; font-size: 12px; margin-bottom: 4px; }
+
+/* 💡 安全なページ遷移リンク（押しやすさは維持） */
+.rel-links { font-size: 11px; margin: 6px 0 0 0; display: flex; gap: 6px; }
+.rel-links a {
+    background: #f1f5f9;
+    color: #475569;
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    flex: 1; /* 横幅いっぱいに均等に広げる */
+}
+/* 💡 R18用は完全に導線を分ける */
+.rel-links a.r18-link { background: #fff1f2; color: #e11d48; }
+
+.more-section { text-align: center; margin-bottom: 40px; }
+.more-btn {
+    padding: 8px 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #555;
+    cursor: pointer;
+}
+
+footer { text-align: center; color: #666; font-size: 11px; padding-bottom: 20px; }
+</style>
+
+<script>
+// ダミーデータ（件数付き）
+const storeData = {
+    DMM: [
+        { title: "メタファー：リファンタジオ", price: "¥4,980", sale: "50% OFF" },
+        { title: "ペルソナ4 ゴールデン", price: "¥1,980", sale: "60% OFF" }
+    ],
+    シーモア: [ { title: "【電子コミック】チェンソーマン 18巻", price: "¥480", sale: "30% pt還元" } ],
+    DLSite: [ { title: "[同人ゲーム] 爆裂魔法少女の日常RPG", price: "¥1,210", sale: "40% OFF" } ]
+};
+
+function syncHeaderHeight() {
+    const header = document.querySelector('.sticky-header');
+    if (header) {
+        document.body.style.paddingTop = (header.offsetHeight + 6) + 'px';
+    }
+}
+
+function toggleNews() {
+    const content = document.getElementById('news-content');
+    content.style.display = (content.style.display === 'none' || content.style.display === '') ? 'block' : 'none';
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    syncHeaderHeight();
+    window.addEventListener('resize', syncHeaderHeight);
+
+    // 画像切り替え
+    document.getElementById('image-toggle').addEventListener('change', function() {
+        if (this.checked) { document.body.classList.add('image-on'); }
+        else { document.body.classList.remove('image-on'); }
+        setTimeout(syncHeaderHeight, 30);
+    });
+
+    // タブ件数セット
+    document.getElementById('count-dmm').textContent = storeData.DMM.length;
+    document.getElementById('count-cmore').textContent = storeData.シーモア.length;
+    document.getElementById('count-dlsite').textContent = storeData.DLSite.length;
+});
+</script>
+</head>
+<body>
+
+<div class="sticky-header">
+    <div class="header-top">
+        <h1>path frontier</h1>
+        <div class="header-actions">
+            <label class="toggle-wrapper"><input type="checkbox" id="image-toggle"> 画像表示</label>
+            <div class="sub-link-area"><a href="#">成人向け ➔</a></div>
+        </div>
+    </div>
+
+    <section class="control-panel">
+        <div class="control-section">
+            <div class="control-title">🛒 種類</div>
+            <div class="filters-row">
+                <label><input type="checkbox" checked> 漫画</label>
+                <label><input type="checkbox"> ラノベ</label>
+                <label><input type="checkbox"> 同人</label>
+                <label><input type="checkbox"> ゲーム</label>
+            </div>
+        </div>
+        <div class="control-section">
+            <div class="control-title">📅 開始日</div>
+            <div class="filters-row">
+                <label><input type="radio" name="date-filter" checked> 指定なし</label>
+                <label><input type="radio" name="date-filter"> 今日</label>
+                <label><input type="radio" name="date-filter"> 3日前</label>
+                <label><input type="radio" name="date-filter"> 1週間</label>
+            </div>
+        </div>
+        <div class="control-section">
+            <div class="control-title">📊 順序</div>
+            <div class="filters-row">
+                <label><input type="radio" name="sort" checked> 人気</label>
+                <label><input type="radio" name="sort"> 割引率</label>
+                <label><input type="radio" name="sort"> 安い</label>
+            </div>
+        </div>
+        <div class="submit-section">
+            <button class="apply-btn">この条件で検索</button>
+        </div>
+    </section>
+
+    <div class="platform-container">
+        <div class="platform-tab active">DMM <span class="tab-count" id="count-dmm">2</span></div>
+        <div class="platform-tab">シーモア <span class="tab-count" id="count-cmore">1</span></div>
+        <div class="platform-tab">DLSite <span class="tab-count" id="count-dlsite">1</span></div>
+    </div>
+</div>
+
+<div class="scroll-content">
+    <div class="news-accordion">
+        <div class="news-header" onclick="toggleNews()"><span>📢 開催中の大型セール・クーポン</span><span>▼</span></div>
+        <div id="news-content" class="news-content">
+            <ul><li><a href="#">【DMM】最大50%ポイント還元祭り開催中（〜6/30）</a></li></ul>
+        </div>
+    </div>
+
+    <section>
+        <div class="results" id="results-list">
+            <div class="card">
+                <div class="thumb"></div>
+                <h3><a href="#">メタファー：リファンタジオ</a></h3>
+                <div class="price-row">
+                    <div class="price">¥4,980</div><div class="sale">50% OFF</div>
+                    <p class="rel-links">
+                        <a href="./relation.html?id=metaphor" target="_blank">関連商品</a>
+                        <a href="./r18/relation.html?id=metaphor" class="r18-link" target="_blank">関連商品(R18)</a>
+                    </p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="thumb"></div>
+                <h3><a href="#">ペルソナ4 ゴールデン</a></h3>
+                <div class="price-row">
+                    <div class="price">¥1,980</div><div class="sale">60% OFF</div>
+                    <p class="rel-links">
+                        <a href="./relation.html?id=p4g" target="_blank">関連商品</a>
+                        <a href="./r18/relation.html?id=p4g" class="r18-link" target="_blank">関連商品(R18)</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="more-section"><button class="more-btn">もっと見る</button></div>
+    </section>
+    <footer style="background: #1e293b; color: #94a3b8; padding: 30px 14px; text-align: center; font-size: 11px; margin-top: 40px; border-top: 4px solid #007bff;">
+    
+    <div style="margin-bottom: 15px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+        <a href="terms.html" style="color: #cbd5e1; text-decoration: none; font-weight: bold;">利用規約</a>
+<span style="color: #475569;">|</span>
+<a href="privacy.html" style="color: #cbd5e1; text-decoration: none; font-weight: bold;">プライバシーポリシー</a>
+        <span style="color: #475569;">|</span>
+        <a href="#" style="color: #cbd5e1; text-decoration: none; font-weight: bold;">お問い合わせ</a>
+    </div>
+
+    <div style="max-width: 600px; margin: 0 auto 15px auto; color: #64748b; line-height: 1.6; text-align: left; background: #0f172a; padding: 10px; border-radius: 6px;">
+        当サイト（path frontier）で掲載している価格、セール、キャンペーン等の情報は、各プラットフォームのAPIまたは公開情報を元に自動更新しております。最新かつ正確な情報を提供するよう努めておりますが、ご購入の際は必ず各ストアの最終画面にて価格をご確認ください。
+    </div>
+
+    <p style="margin: 0; color: #64748b;">© 2026 path frontier All Rights Reserved.</p>
+</footer>
+</div>
+
+</body>
+</html>

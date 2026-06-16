@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>関連作品検索(R18) - path frontier</title>
+
+<style>
+/* ========================================================
+   🔞 R18専用ダークテーマ・全体レイアウト
+   ======================================================== */
+body {
+    font-family: sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;
+    background: #111827; /* 深みのある黒・ダークグレー */
+    color: #f3f4f6;
+    padding-top: 70px;
+}
+
+/* 📌 固定ヘッダー（R18専用ピンクアクセント） */
+.relation-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #1f2937;
+    z-index: 1000;
+    padding: 12px 14px;
+    max-width: 900px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    border-bottom: 2px solid #e11d48; /* R18用のピンクレッド */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.back-btn {
+    background: #374151;
+    color: #9ca3af;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.target-title-area { flex-grow: 1; }
+.target-label {
+    font-size: 10px;
+    color: #e11d48;
+    font-weight: bold;
+    display: block;
+}
+.target-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ========================================================
+   📜 横断リストエリア
+   ======================================================== */
+.relation-content { padding: 14px; }
+
+.pf-section {
+    background: #1f2937;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.pf-badge-header {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+/* R18各社のダークモード用カラー */
+.bg-fanza { background: #4c0519; color: #fda4af; border-bottom: 2px solid #881337; }
+.bg-dlsite-r18 { background: #4a044e; color: #fbcfe8; border-bottom: 2px solid #701a75; }
+
+.match-count {
+    font-size: 11px;
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid #374151;
+}
+.item-row:last-child { border-bottom: none; }
+
+.item-info { display: flex; flex-direction: column; gap: 3px; padding-right: 10px; }
+.item-title { font-size: 13px; font-weight: bold; line-height: 1.4; }
+.item-title a { color: #f3f4f6; text-decoration: none; }
+.item-title a:hover { color: #fda4af; text-decoration: underline; }
+
+.item-meta { font-size: 10px; color: #9ca3af; }
+
+.item-price-area { text-align: right; flex-shrink: 0; }
+.item-price { font-size: 14px; font-weight: bold; color: #f43f5e; }
+.item-sale { font-size: 10px; color: #4ade80; font-weight: bold; }
+
+.no-data { padding: 20px; text-align: center; font-size: 12px; color: #6b7280; }
+
+/* ========================================================
+   🛡️ 鉄壁のコンプラ防衛線：年齢確認オーバーレイ
+   ======================================================== */
+.gate-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #0b0f19;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.gate-box {
+    background: #1f2937;
+    padding: 30px 20px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    border: 1px solid #374151;
+}
+.gate-box h3 { margin: 0 0 12px 0; font-size: 18px; color: #fff; }
+.gate-box p { font-size: 13px; color: #9ca3af; line-height: 1.6; margin: 0 0 24px 0; }
+.gate-buttons { display: flex; gap: 12px; }
+.gate-btn {
+    flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;
+}
+.btn-yes { background: #e11d48; color: #fff; }
+.btn-no { background: #4b5563; color: #d1d5db; }
+
+footer { text-align: center; color: #4b5563; font-size: 11px; padding: 20px 0; }
+</style>
+
+<script>
+// 💡 R18専用の横断検索ダミーデータベース
+const r18Database = {
+    "p4g": {
+        mainTitle: "ペルソナ4 ゴールデン",
+        fanza: [
+            { title: "[同人CG集] P4G詰め合わせ本", meta: "同人誌 / サークル名XYZ", price: "¥550", sale: "新着" }
+        ],
+        dlsite: [
+            { title: "[同人音声] マヨナカテレビで囁く癒やしボイス", meta: "音声作品 / サークル名ABC", price: "¥1,100", sale: "20% OFF" }
+        ]
+    },
+    "metaphor": {
+        mainTitle: "メタファー：リファンタジオ",
+        fanza: [],
+        dlsite: [
+            { title: "[同人CG集] 幻想世界の聖女合同誌", meta: "同人誌 / サークル名MNO", price: "¥715", sale: "10% pt還元" }
+        ]
+    }
+};
+
+// クッションページの「はい」を押したときの処理
+function certifyAge() {
+    document.getElementById('age-gate').style.display = 'none';
+}
+
+// 「いいえ」ならおとなしくタブを閉じる
+function rejectAge() {
+    window.close();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id') || 'p4g';
+
+    const data = r18Database[productId] || { mainTitle: "未知の作品", fanza: [], dlsite: [] };
+    document.getElementById('target-title').textContent = data.mainTitle;
+
+    function renderSection(containerId, countId, items) {
+        const container = document.getElementById(containerId);
+        const countEl = document.getElementById(countId);
+        countEl.textContent = `${items.length}件`;
+
+        if (items.length === 0) {
+            container.innerHTML = `<div class="no-data">このプラットフォームに関連作品(R18)はありません</div>`;
+            return;
+        }
+
+        let html = '';
+        items.forEach(item => {
+            html += `
+                <div class="item-row">
+                    <div class="item-info">
+                        <div class="item-title"><a href="#" target="_blank">${item.title}</a></div>
+                        <div class="item-meta">${item.meta}</div>
+                    </div>
+                    <div class="item-price-area">
+                        <div class="item-price">${item.price}</div>
+                        <div class="item-sale">${item.sale}</div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    renderSection('fanza-list', 'fanza-count', data.fanza);
+    renderSection('dlsite-list', 'dlsite-count', data.dlsite);
+});
+</script>
+</head>
+<body>
+
+<div class="gate-overlay" id="age-gate">
+    <div class="gate-box">
+        <h3>年齢確認</h3>
+        <p>ここから先は成人向け（R18）の関連情報を表示します。<br>あなたは18歳以上ですか？</p>
+        <div class="gate-buttons">
+            <button class="gate-btn btn-yes" onclick="certifyAge()">はい（入場）</button>
+            <button class="gate-btn btn-no" onclick="rejectAge()">いいえ</button>
+        </div>
+    </div>
+</div>
+
+<header class="relation-header">
+    <button class="back-btn" onclick="window.close();">✕ 閉じる</button>
+    <div class="target-title-area">
+        <span class="target-label">CROSS PLATFORM RELATION (R18)</span>
+        <h2 class="target-title" id="target-title">作品名読み込み中...</h2>
+    </div>
+</header>
+
+<div class="relation-content">
+
+    <section class="pf-section">
+        <div class="pf-badge-header bg-fanza">
+            <span>FANZA (同人/ゲーム/動画)</span>
+            <span class="match-count" id="fanza-count">0件</span>
+        </div>
+        <div id="fanza-list"></div>
+    </section>
+
+    <section class="pf-section">
+        <div class="pf-badge-header bg-dlsite-r18">
+            <span>DLSite (R18)</span>
+            <span class="match-count" id="dlsite-count">0件</span>
+        </div>
+        <div id="dlsite-list"></div>
+    </section>
+
+    <footer>
+        © path frontier (R18 Mode)
+    </footer>
+</div>
+
+</body>
+</html>

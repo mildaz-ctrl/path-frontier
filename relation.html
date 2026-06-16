@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>関連作品検索 - path frontier</title>
+
+<style>
+/* ========================================================
+   📱 全体レイアウト
+   ======================================================== */
+body {
+    font-family: sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;
+    background: #f8fafc;
+    color: #1e293b;
+    padding-top: 124px; /* 固定ヘッダー分の余白 */
+}
+
+/* ========================================================
+   📌 固定ヘッダーエリア（画像スイッチ追加）
+   ======================================================== */
+.relation-sticky-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #fff;
+    z-index: 1000;
+    max-width: 900px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* 上段：タイトル、戻るボタン、画像表示スイッチ */
+.header-top-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px 6px 14px;
+}
+
+.back-btn {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.target-title-area { flex-grow: 1; min-width: 0; }
+.target-label { font-size: 9px; color: #007bff; font-weight: bold; display: block; letter-spacing: 0.05em; }
+.target-title { font-size: 14px; font-weight: bold; color: #0f172a; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 💡 ヘッダー側の画像スイッチ */
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #555;
+    background: #eee;
+    padding: 4px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.toggle-wrapper input { margin: 0; }
+
+/* 下段：極薄ジャンルフィルタタブ */
+.filter-tabs-row {
+    display: flex;
+    padding: 0 14px;
+    background: #fff;
+    gap: 4px;
+}
+.filter-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 12px;
+    font-weight: bold;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+.filter-tab.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
+
+/* ========================================================
+   📜 名寄せカードリスト
+   ======================================================== */
+.relation-content { padding: 12px 14px; }
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.merge-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-main-info { display: flex; gap: 10px; margin-bottom: 12px; }
+
+/* 💡 ダミー画像を表示する枠（中身が分かるように仮のテキストをイン） */
+.card-thumb {
+    width: 65px; height: 85px;
+    background: #cbd5e1; border-radius: 6px;
+    flex-shrink: 0;
+    display: none; /* 初期は非表示 */
+    font-size: 9px;
+    color: #475569;
+    text-align: center;
+    line-height: 85px;
+    font-weight: bold;
+}
+/* bodyにimage-onクラスがついた時だけ画像を表示 */
+body.image-on .card-thumb { display: block; }
+
+.card-text-block { flex-grow: 1; min-width: 0; }
+
+.type-badge {
+    font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px;
+    display: inline-block; margin-bottom: 4px;
+}
+.type-game { background: #e0f2fe; color: #0369a1; }
+.type-comic { background: #fef3c7; color: #d97706; }
+.type-video { background: #fce7f3; color: #c026d3; }
+
+.item-title { font-size: 13px; font-weight: bold; color: #1e293b; margin: 0 0 4px 0; line-height: 1.4; }
+.item-author { font-size: 11px; color: #64748b; }
+
+.pf-compare-section {
+    margin-top: auto;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 8px;
+    border: 1px solid #f1f5f9;
+}
+.compare-title { font-size: 10px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; }
+.pf-buttons-list { display: flex; flex-direction: column; gap: 6px; }
+
+.pf-price-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.pf-price-btn:hover { border-color: #cbd5e1; background: #f1f5f9; }
+
+.store-name-side { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: bold; color: #475569; }
+.store-indicator { width: 6px; height: 6px; border-radius: 50%; }
+.ind-dmm { background: #007bff; }
+.ind-cymore { background: #ff9900; }
+.ind-dlsite { background: #ff0066; }
+
+.price-side { text-align: right; font-size: 12px; font-weight: bold; }
+.price-value { color: #0f172a; }
+.pf-price-btn.on-sale { background: #ffffec; border-color: #fde68a; }
+.pf-price-btn.on-sale .price-value { color: #d10000; }
+.sale-badge { font-size: 9px; color: #008000; margin-left: 4px; font-weight: bold; }
+
+.pf-price-btn.no-stock {
+    background: #f1f5f9; border-color: #f1f5f9; pointer-events: none; opacity: 0.5;
+}
+.pf-price-btn.no-stock .price-value { color: #94a3b8; font-weight: normal; }
+
+footer { text-align: center; color: #94a3b8; font-size: 11px; padding: 30px 0; }
+</style>
+
+<script>
+const mergedRelationDatabase = {
+    "p4g": [
+        {
+            title: "ペルソナ4 ゴールデン",
+            type: "game", typeName: "🎮 ゲーム", typeClass: "type-game",
+            author: "アトラス",
+            stores: {
+                dmm: { price: "¥1,980", sale: "60% OFF", isSale: true, url: "#" },
+                cymore: { price: "非対応", sale: "", isSale: false, url: "" },
+                dlsite: { price: "非対応", sale: "", isSale: false, url: "" }
+            }
+        },
+        {
+            title: "ペルソナ4 (1)巻",
+            type: "comic", typeName: "📚 マンガ・書籍", typeClass: "type-comic",
+            author: "曽我部修司 / アトラス",
+            stores: {
+                dmm: { price: "¥220", sale: "50% OFF", isSale: true, url: "#" },
+                cymore: { price: "¥110", sale: "1巻無料フェア", isSale: true, url: "#" },
+                dlsite: { price: "非対応", sale: "", isSale: false, url: "" }
+            }
+        },
+        {
+            title: "ペルソナ4 (2)巻",
+            type: "comic", typeName: "📚 マンガ・書籍", typeClass: "type-comic",
+            author: "曽我部修司 / アトラス",
+            stores: {
+                dmm: { price: "¥440", sale: "通常価格", isSale: false, url: "#" },
+                cymore: { price: "¥440", sale: "通常価格", isSale: false, url: "#" },
+                dlsite: { price: "非対応", sale: "", isSale: false, url: "" }
+            }
+        },
+        {
+            title: "TVアニメ「ペルソナ4」第1話",
+            type: "video", typeName: "🎬 動画・その他", typeClass: "type-video",
+            author: "P4A Committee",
+            stores: {
+                dmm: { price: "¥0", sale: "サブスク見放題", isSale: true, url: "#" },
+                cymore: { price: "非対応", sale: "", isSale: false, url: "" },
+                dlsite: { price: "非対応", sale: "", isSale: false, url: "" }
+            }
+        }
+    ],
+    "metaphor": [
+        {
+            title: "メタファー：リファンタジオ 通常版",
+            type: "game", typeName: "🎮 ゲーム", typeClass: "type-game",
+            author: "アトラス",
+            stores: {
+                dmm: { price: "¥4,980", sale: "50% OFF", isSale: true, url: "#" },
+                cymore: { price: "非対応", sale: "", isSale: false, url: "" },
+                dlsite: { price: "非対応", sale: "", isSale: false, url: "" }
+            }
+        },
+        {
+            title: "メタファー：リファンタジオ 公式設定資料集",
+            type: "comic", typeName: "📚 マンガ・書籍", typeClass: "type-comic",
+            author: "KADOKAWA / アトラス",
+            stores: {
+                dmm: { price: "¥3,800", sale: "通常価格", isSale: false, url: "#" },
+                cymore: { price: "¥3,420", sale: "10% OFFクーポン", isSale: true, url: "#" },
+                dlsite: { price: "非対応", sale: "", isSale: false, url: "" }
+            }
+        }
+    ]
+};
+
+document.addEventListener("DOMContentLoaded", function() {
+    const imageToggle = document.getElementById('rel-image-toggle');
+
+    // 💡 1. 初期状態チェック（前画面のlocalStorage設定を引き継ぐ）
+    const imageSetting = localStorage.getItem('imageDisplaySetting');
+    if (imageSetting === 'true') {
+        document.body.classList.add('image-on');
+        imageToggle.checked = true;
+    } else {
+        document.body.classList.remove('image-on');
+        imageToggle.checked = false;
+    }
+
+    // 💡 2. この画面内での画像切り替えイベント
+    imageToggle.addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.add('image-on');
+            localStorage.setItem('imageDisplaySetting', 'true');
+        } else {
+            document.body.classList.remove('image-on');
+            localStorage.setItem('imageDisplaySetting', 'false');
+        }
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id') || 'p4g';
+    const rawData = mergedRelationDatabase[productId] || [];
+
+    const mainTitle = productId === 'p4g' ? "ペルソナ4 ゴールデン" : "メタファー：リファンタジオ";
+    document.getElementById('target-title').textContent = mainTitle;
+
+    function renderMergedCards(filterType = 'all') {
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+
+        const filteredData = rawData.filter(item => filterType === 'all' || item.type === filterType);
+
+        if (filteredData.length === 0) {
+            container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#94a3b8; font-size:13px;">該当するジャンルの関連作品はありません</div>`;
+            return;
+        }
+
+        filteredData.forEach(item => {
+            let storeButtonsHtml = '';
+            storeButtonsHtml += createStoreButton('DMM', 'ind-dmm', item.stores.dmm);
+            storeButtonsHtml += createStoreButton('シーモア', 'ind-cymore', item.stores.cymore);
+            storeButtonsHtml += createStoreButton('DLSite', 'ind-dlsite', item.stores.dlsite);
+
+            // 💡 ここのdiv（card-thumb）の中に「[画像]」というテキストを仕込みました！
+            container.innerHTML += `
+                <div class="merge-card">
+                    <div class="card-main-info">
+                        <div class="card-thumb">[画像]</div>
+                        <div class="card-text-block">
+                            <span class="type-badge ${item.typeClass}">${item.typeName}</span>
+                            <h3 class="item-title">${item.title}</h3>
+                            <div class="item-author">${item.author}</div>
+                        </div>
+                    </div>
+                    <div class="pf-compare-section">
+                        <div class="compare-title">🛒 ストア別価格・セール比較</div>
+                        <div class="pf-buttons-list">
+                            ${storeButtonsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function createStoreButton(name, colorClass, storeObj) {
+        if (storeObj.price === '非対応' || !storeObj.price) {
+            return `
+                <div class="pf-price-btn no-stock">
+                    <span class="store-name-side"><span class="store-indicator ${colorClass}"></span>${name}</span>
+                    <span class="price-side"><span class="price-value">未取扱</span></span>
+                </div>
+            `;
+        }
+        
+        const saleClass = storeObj.isSale ? 'on-sale' : '';
+        const saleBadge = storeObj.isSale ? `<span class="sale-badge">${storeObj.sale}</span>` : '';
+
+        return `
+            <a href="${storeObj.url}" target="_blank" class="pf-price-btn ${saleClass}">
+                <span class="store-name-side"><span class="store-indicator ${colorClass}"></span>${name}</span>
+                <span class="price-side">
+                    <span class="price-value">${storeObj.price}</span>${saleBadge}
+                </span>
+            </a>
+        `;
+    }
+
+    const tabs = document.querySelectorAll('.filter-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            renderMergedCards(this.dataset.type);
+        });
+    });
+
+    renderMergedCards('all');
+});
+</script>
+</head>
+<body>
+
+<div class="relation-sticky-header">
+    <div class="header-top-row">
+        <button class="back-btn" onclick="window.close();">✕ 閉じる</button>
+        <div class="target-title-area">
+            <span class="target-label">CROSS PLATFORM MERGE COMPARE</span>
+            <h2 class="target-title" id="target-title">読み込み中...</h2>
+        </div>
+        <label class="toggle-wrapper"><input type="checkbox" id="rel-image-toggle"> 画像表示</label>
+    </div>
+
+    <div class="filter-tabs-row">
+        <div class="filter-tab active" data-type="all">全て</div>
+        <div class="filter-tab" data-type="game">🎮 ゲーム</div>
+        <div class="filter-tab" data-type="comic">📚 マンガ・書籍</div>
+        <div class="filter-tab" data-type="video">🎬 動画・その他</div>
+    </div>
+</div>
+
+<div class="relation-content">
+    <div class="cards-grid" id="cards-container">
+        </div>
+
+    <footer>
+        © path frontier
+    </footer>
+</div>
+
+</body>
+</html>
